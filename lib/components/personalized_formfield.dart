@@ -51,9 +51,9 @@ class PersonalizedFormField extends StatelessWidget {
                 : [
                     LengthLimitingTextInputFormatter(limitOfCaracters),
                   ],
-        focusNode: focusNode ?? null,
+        focusNode: focusNode,
         onFieldSubmitted: onFieldSubmitted,
-        validator: validator ?? null,
+        validator: validator,
         autovalidateMode: AutovalidateMode.onUserInteraction,
         style: const TextStyle(
           fontWeight: FontWeight.w500,
@@ -69,7 +69,7 @@ class PersonalizedFormField extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          suffixIcon: suffixWidget != null ? suffixWidget : null,
+          suffixIcon: suffixWidget ?? suffixWidget,
           labelStyle: TextStyle(
             color: Theme.of(context)
                 .colorScheme

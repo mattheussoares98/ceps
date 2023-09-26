@@ -1,4 +1,4 @@
-import "package:ceps/models/cep_model.dart";
+import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 
 class ViacepAPI {
@@ -9,7 +9,9 @@ class ViacepAPI {
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
-      print(await response.stream.bytesToString());
+      String repsonseInString = await response.stream.bytesToString();
+
+      debugPrint(repsonseInString);
 
       // CepModel(
       //   cep: cep,
@@ -19,7 +21,7 @@ class ViacepAPI {
       //   localidade: localidade,
       // );
     } else {
-      print(response.reasonPhrase);
+      debugPrint(response.reasonPhrase);
     }
   }
 }

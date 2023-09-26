@@ -60,15 +60,18 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
     }
   }
 
-  ValueNotifier<String?> _selectedStateDropDown = ValueNotifier<String?>("");
-
+  bool isLoaded = false;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
     CepProvider cepProvider = Provider.of(context, listen: true);
-    _selectedStateDropDown.value = cepProvider.selectedStateDropDown.value;
-    updateControllers(cepProvider: cepProvider);
+
+    if (!isLoaded) {
+      updateControllers(cepProvider: cepProvider);
+
+      isLoaded = true;
+    }
   }
 
   @override
@@ -84,12 +87,15 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
     _referenceFocusNode.dispose();
   }
 
-  showErrorMessage({
+  showSnackBar({
     required CepProvider cepProvider,
+    required String errorMessage,
+    Color? backgroundColor = Colors.red,
   }) {
     ShowSnackbarMessage.showMessage(
-      message: cepProvider.errorMessageAddAddres,
+      message: errorMessage,
       context: context,
+      backgroundColor: backgroundColor!,
     );
   }
 
@@ -97,24 +103,85 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
     FocusScope.of(context).unfocus();
   }
 
-  bool _isUpdate = false;
-
+  CepModel? cepModelFromArgumentsForUpdateData;
   updateControllers({
     required CepProvider cepProvider,
   }) {
-    _isUpdate = false;
-    Map data = {};
     if (ModalRoute.of(context)?.settings.arguments != null) {
-      data = ModalRoute.of(context)?.settings.arguments as Map;
+      Map data = ModalRoute.of(context)?.settings.arguments as Map;
 
-      _isUpdate = true;
-      CepModel cepModel = data["cepModel"];
-      cepProvider.loadCepInformations(cepModel: cepModel);
+      cepModelFromArgumentsForUpdateData = data["cepModel"];
+      cepProvider.loadCepInformations(
+          cepModel: cepModelFromArgumentsForUpdateData!);
 
       // objectId:
       // cepModel.objectId.toString();
       // referencia:
       // cepProvider.cepController.text = "";
+    }
+  }
+
+  _addAdress({required CepProvider cepProvider}) async {
+    await cepProvider.addCep();
+    if (cepProvider.errorMessageAddAddres != "") {
+      showSnackBar(
+        cepProvider: cepProvider,
+        errorMessage: cepProvider.errorMessageAddAddres,
+      );
+    } else {
+      showSnackBar(
+        cepProvider: cepProvider,
+        errorMessage: "O CEP foi adicionado com sucesso",
+        backgroundColor: Colors.green,
+      );
+    }
+    unfocus();
+  }
+
+  _closePage() {
+    Navigator.of(context).pop();
+  }
+
+  _updateAdress({
+    required CepProvider cepProvider,
+  }) async {
+    bool updatedCep = await cepProvider.updateCep(
+      objectId: cepModelFromArgumentsForUpdateData!.objectId!,
+    );
+    if (cepProvider.errorMessageUpdateCep != "") {
+      showSnackBar(
+        cepProvider: cepProvider,
+        errorMessage: cepProvider.errorMessageUpdateCep,
+      );
+    }
+
+    if (updatedCep) {
+      _closePage();
+      showSnackBar(
+        cepProvider: cepProvider,
+        errorMessage: "O endereço foi alterado com sucesso",
+        backgroundColor: Colors.green,
+      );
+    }
+    unfocus();
+  }
+
+  addOrUpdateCep({
+    required CepProvider cepProvider,
+  }) async {
+    bool isValid = validate();
+
+    if (isValid && cepProvider.cepController.text.isNotEmpty) {
+      if (cepModelFromArgumentsForUpdateData == null) {
+        await _addAdress(cepProvider: cepProvider);
+      } else {
+        await _updateAdress(cepProvider: cepProvider);
+      }
+    } else {
+      ShowSnackbarMessage.showMessage(
+        message: "Insira os dados corretamente para salvar o endereço",
+        context: context,
+      );
     }
   }
 
@@ -129,7 +196,11 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Adicionar CEP"),
+          title: Text(
+            cepModelFromArgumentsForUpdateData == null
+                ? "Adicionar CEP"
+                : "Alterar CEP",
+          ),
           leading: IconButton(
             onPressed: () {
               cepProvider.clearCepControllers();
@@ -167,9 +238,9 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
                           return null;
                         } else if (value.length < 8) {
                           return "Quantidade de números inválido!";
-                        } else if (value.contains("\.") ||
-                            value.contains("\,") ||
-                            value.contains("\-") ||
+                        } else if (value.contains(".") ||
+                            value.contains(",") ||
+                            value.contains("-") ||
                             value.contains(" ")) {
                           return "Digite somente números";
                         }
@@ -267,7 +338,7 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
                                   focusNode: _cityFocusNode,
                                   labelText: "Cidade",
                                   textEditingController:
-                                      cepProvider.bairroController,
+                                      cepProvider.cidadeController,
                                   limitOfCaracters: 30,
                                   onFieldSubmitted: (value) {
                                     FocusScope.of(context)
@@ -293,7 +364,8 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
                                 flex: 5,
                                 child: DropdownButtonFormField<dynamic>(
                                   focusNode: _stateFocusNode,
-                                  value: _selectedStateDropDown.value,
+                                  value:
+                                      cepProvider.selectedStateDropDown.value,
                                   isExpanded: true,
                                   hint: Center(
                                     child: Text(
@@ -364,15 +436,13 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
                                       cepProvider.numeroController,
                                   limitOfCaracters: 6,
                                   validator: (String? value) {
-                                    if ((value == null ||
-                                            value.isEmpty ||
-                                            value.length < 1) &&
+                                    if ((value == null || value.isEmpty) &&
                                         cepProvider.cepController.text.length ==
                                             8) {
                                       return "Digite o número!";
-                                    } else if (value!.contains("\.") ||
-                                        value.contains("\,") ||
-                                        value.contains("\-") ||
+                                    } else if (value!.contains(".") ||
+                                        value.contains(",") ||
+                                        value.contains("-") ||
                                         value.contains(" ")) {
                                       return "Digite somente números";
                                     }
@@ -455,38 +525,29 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
                                   onPressed: cepProvider.isAddingCep
                                       ? null
                                       : () async {
-                                          bool isValid = validate();
-
                                           ShowAlertDialog.showAlertDialog(
                                             context: context,
-                                            title: "Adicionar endereço",
-                                            subtitle:
-                                                "Deseja realmente cadastrar esse endereço?",
+                                            title:
+                                                cepModelFromArgumentsForUpdateData ==
+                                                        null
+                                                    ? "Adicionar endereço"
+                                                    : "Alterar endereço",
+                                            subtitle: cepModelFromArgumentsForUpdateData ==
+                                                    null
+                                                ? "Deseja realmente cadastrar esse endereço?"
+                                                : "Deseja realmente alterar esse endereço?",
                                             function: () async {
-                                              if (isValid &&
-                                                  cepProvider.cepController.text
-                                                      .isNotEmpty) {
-                                                await cepProvider.addCep();
-                                                if (cepProvider
-                                                        .errorMessageAddAddres !=
-                                                    "") {
-                                                  showErrorMessage(
-                                                      cepProvider: cepProvider);
-                                                }
-                                                unfocus();
-                                              } else {
-                                                ShowSnackbarMessage.showMessage(
-                                                  message:
-                                                      "Insira os dados corretamente para salvar o endereço",
-                                                  context: context,
-                                                );
-                                              }
+                                              await addOrUpdateCep(
+                                                cepProvider: cepProvider,
+                                              );
                                             },
                                           );
                                         },
-                                  child: const Text(
-                                    "Adicionar endereço",
-                                    style: TextStyle(
+                                  child: Text(
+                                    cepModelFromArgumentsForUpdateData == null
+                                        ? "Adicionar endereço"
+                                        : "Alterar endereço",
+                                    style: const TextStyle(
                                       color: Colors.white,
                                     ),
                                   ),
@@ -502,6 +563,8 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
             ),
             if (cepProvider.isAddingCep)
               const LoadingComponent(message: "Adicionando CEP"),
+            if (cepProvider.isUpdatingCep)
+              const LoadingComponent(message: "Alterando CEP"),
           ],
         ),
       ),

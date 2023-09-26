@@ -1,7 +1,6 @@
 import "dart:convert";
-
-import 'package:ceps/providers/cep_provider.dart';
 import "package:ceps/models/cep_model.dart";
+import "package:flutter/material.dart";
 import "package:http/http.dart" as http;
 
 class Back4appDatabaseAPI {
@@ -31,9 +30,9 @@ class Back4appDatabaseAPI {
       if (results.isNotEmpty) {
         cepAlreadyRegistered = true;
       }
-      print(responseInMap);
+      debugPrint(responseInMap.toString());
     } else {
-      print(response.reasonPhrase);
+      debugPrint(response.reasonPhrase);
     }
 
     return cepAlreadyRegistered;
@@ -57,7 +56,7 @@ class Back4appDatabaseAPI {
         idInBack4app = responseInMap["objectId"];
       } else {}
     } catch (e) {
-      print("Erro para adicionar o CEP: $e");
+      debugPrint("Erro para adicionar o CEP: $e");
     }
 
     return idInBack4app;
@@ -84,7 +83,7 @@ class Back4appDatabaseAPI {
 
         List results = responseInMap["results"];
 
-        results.forEach((element) {
+        for (var element in results) {
           cepModels.add(
             CepModel(
               estado: element["estado"],
@@ -92,19 +91,21 @@ class Back4appDatabaseAPI {
               logradouro: element["logradouro"],
               complemento: element["complemento"],
               bairro: element["bairro"],
-              localidade: element["localidade"],
+              cidade: element["localidade"],
               numero: element["numero"],
               objectId: element["objectId"],
               referencia: element["referencia"],
             ),
           );
-        });
+        }
 
-        print(responseInString);
+        debugPrint(responseInString);
       } else {
-        print(response.reasonPhrase);
+        debugPrint(response.reasonPhrase);
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint(e.toString());
+    }
 
     return cepModels;
   }
@@ -119,13 +120,44 @@ class Back4appDatabaseAPI {
     try {
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {
-        print(await response.stream.bytesToString());
+        debugPrint(await response.stream.bytesToString());
         deletedCep = true;
       } else {
-        print(response.reasonPhrase);
+        debugPrint(response.reasonPhrase);
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint(e.toString());
+    }
 
     return deletedCep;
+  }
+
+  static Future<bool> updateCep({
+    required CepModel cepModel,
+  }) async {
+    bool isUpdated = false;
+
+    try {
+      var request = http.Request(
+          'PUT',
+          Uri.parse(
+              'https://parseapi.back4app.com/classes/CEPs/${cepModel.objectId}'));
+      request.body = json.encode(cepModel);
+      request.headers.addAll(_headers);
+
+      http.StreamedResponse response = await request.send();
+
+      if (response.statusCode == 200) {
+        String responseInString = await response.stream.bytesToString();
+        isUpdated = true;
+        debugPrint(responseInString);
+      } else {
+        debugPrint(response.reasonPhrase);
+      }
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+
+    return isUpdated;
   }
 }

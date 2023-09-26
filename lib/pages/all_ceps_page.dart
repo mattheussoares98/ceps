@@ -1,9 +1,7 @@
-import 'package:ceps/api/back4app_database_api.dart';
 import 'package:ceps/components/loading_component.dart';
 import 'package:ceps/components/show_alert_dialog.dart';
 import 'package:ceps/models/cep_model.dart';
 import 'package:ceps/providers/cep_provider.dart';
-import 'package:ceps/pages/add_or_update_cep_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,16 +12,6 @@ class AllCepsPage extends StatefulWidget {
   State<AllCepsPage> createState() => _AllCepsPageState();
 }
 
-TextStyle _titleStyle = const TextStyle(
-  fontWeight: FontWeight.bold,
-  fontSize: 15,
-  fontStyle: FontStyle.italic,
-);
-
-TextStyle _subtitleStyle = const TextStyle(
-  fontSize: 14,
-);
-
 class _AllCepsPageState extends State<AllCepsPage> {
   Future<void> getCeps({
     required CepProvider cepProvider,
@@ -31,14 +19,43 @@ class _AllCepsPageState extends State<AllCepsPage> {
     await cepProvider.getAllRegisteredCeps();
   }
 
-  Widget titleAndSubtitule({
-    required String title,
-    required String subtitle,
+  Widget titleAndSubtitle({
+    Color? titleColor = Colors.black,
+    Color? subtitleColor = Colors.black,
+    Widget? otherWidget,
+    String? title,
+    double? fontSize = 17,
+    String? subtitle,
   }) {
     return Row(
-      children: [
-        Text("$title: ", style: _titleStyle),
-        Text(subtitle, style: _subtitleStyle),
+      children: <Widget>[
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              // style: _fontStyle(color: titleColor, fontSize: fontSize),
+              children: <TextSpan>[
+                TextSpan(
+                  text: title == null ? "" : "$title: ",
+                  style: TextStyle(
+                    fontSize: fontSize,
+                    color: titleColor,
+                    fontFamily: 'OpenSans',
+                  ),
+                ),
+                TextSpan(
+                  text: subtitle ?? "",
+                  style: TextStyle(
+                    fontFamily: 'OpenSans',
+                    fontSize: fontSize,
+                    fontWeight: FontWeight.bold,
+                    color: subtitleColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (otherWidget != null) otherWidget,
       ],
     );
   }
@@ -82,7 +99,7 @@ class _AllCepsPageState extends State<AllCepsPage> {
                         direction: DismissDirection.endToStart,
                         key: UniqueKey(),
                         confirmDismiss: (direction) async {
-                          ShowAlertDialog.showAlertDialog(
+                          return ShowAlertDialog.showAlertDialog(
                             context: context,
                             title: "Excluir CEP?",
                             function: () async {
@@ -110,68 +127,15 @@ class _AllCepsPageState extends State<AllCepsPage> {
                           ),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (cepModel.cep != null)
-                                      titleAndSubtitule(
-                                        title: "CEP",
-                                        subtitle: cepModel.cep.toString(),
-                                      ),
-                                    if (cepModel.numero != null)
-                                      titleAndSubtitule(
-                                        title: "Número",
-                                        subtitle: cepModel.numero.toString(),
-                                      ),
-                                    if (cepModel.estado != null)
-                                      titleAndSubtitule(
-                                        title: "Estado",
-                                        subtitle: cepModel.estado.toString(),
-                                      ),
-                                    if (cepModel.bairro != null)
-                                      titleAndSubtitule(
-                                        title: "Bairro",
-                                        subtitle: cepModel.bairro.toString(),
-                                      ),
-                                    if (cepModel.complemento != null)
-                                      titleAndSubtitule(
-                                        title: "Complemento",
-                                        subtitle:
-                                            cepModel.complemento.toString(),
-                                      ),
-                                    if (cepModel.localidade != null)
-                                      titleAndSubtitule(
-                                        title: "Localidade",
-                                        subtitle:
-                                            cepModel.localidade.toString(),
-                                      ),
-                                    if (cepModel.logradouro != null)
-                                      titleAndSubtitule(
-                                        title: "Logradouro",
-                                        subtitle:
-                                            cepModel.logradouro.toString(),
-                                      ),
-                                    if (cepModel.complemento != "")
-                                      titleAndSubtitule(
-                                        title: "Complemento",
-                                        subtitle:
-                                            cepModel.complemento.toString(),
-                                      ),
-                                    if (cepModel.referencia != "")
-                                      titleAndSubtitule(
-                                        title: "Referência",
-                                        subtitle:
-                                            cepModel.referencia.toString(),
-                                      ),
-                                  ],
-                                ),
-                                Column(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
+                                if (cepModel.cep != null)
+                                  titleAndSubtitle(
+                                    title: "CEP",
+                                    subtitle: cepModel.cep.toString(),
+                                    otherWidget: InkWell(
+                                      onTap: () {
                                         Navigator.of(context).pushNamed(
                                           "addOrUpdatePage",
                                           arguments: {
@@ -179,13 +143,51 @@ class _AllCepsPageState extends State<AllCepsPage> {
                                           },
                                         );
                                       },
-                                      icon: const Icon(
-                                        Icons.edit,
-                                        color: Colors.green,
+                                      child: const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(
+                                          Icons.edit,
+                                          color: Colors.green,
+                                        ),
                                       ),
                                     ),
-                                    IconButton(
-                                      onPressed: () async {
+                                  ),
+                                if (cepModel.numero != null)
+                                  titleAndSubtitle(
+                                    title: "Número",
+                                    subtitle: cepModel.numero.toString(),
+                                  ),
+                                if (cepModel.estado != null)
+                                  titleAndSubtitle(
+                                    title: "Estado",
+                                    subtitle: cepModel.estado.toString(),
+                                  ),
+                                if (cepModel.bairro != null)
+                                  titleAndSubtitle(
+                                    title: "Bairro",
+                                    subtitle: cepModel.bairro.toString(),
+                                  ),
+                                if (cepModel.cidade != null)
+                                  titleAndSubtitle(
+                                    title: "Cidade",
+                                    subtitle: cepModel.cidade.toString(),
+                                  ),
+                                if (cepModel.logradouro != null)
+                                  titleAndSubtitle(
+                                    title: "Logradouro",
+                                    subtitle: cepModel.logradouro.toString(),
+                                  ),
+                                if (cepModel.complemento != "")
+                                  titleAndSubtitle(
+                                    title: "Complemento",
+                                    subtitle: cepModel.complemento.toString(),
+                                  ),
+                                if (cepModel.referencia != "")
+                                  titleAndSubtitle(
+                                    title: "Referência",
+                                    subtitle: cepModel.referencia.toString(),
+                                    otherWidget: InkWell(
+                                      onTap: () async {
                                         ShowAlertDialog.showAlertDialog(
                                           context: context,
                                           title: "Excluir CEP?",
@@ -196,13 +198,15 @@ class _AllCepsPageState extends State<AllCepsPage> {
                                           },
                                         );
                                       },
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
+                                      child: const Padding(
+                                        padding: EdgeInsets.only(right: 8.0),
+                                        child: Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
                                       ),
                                     ),
-                                  ],
-                                )
+                                  ),
                               ],
                             ),
                           ),

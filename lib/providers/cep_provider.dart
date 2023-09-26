@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:ceps/api/back4app_database_api.dart';
-import 'package:ceps/components/show_snackbar_message.dart';
 import 'package:ceps/models/cep_model.dart';
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http;
@@ -41,7 +39,7 @@ class CepProvider with ChangeNotifier {
 
   final TextEditingController cepController = TextEditingController();
   final TextEditingController logradouroController = TextEditingController();
-  final TextEditingController localidadeController = TextEditingController();
+  final TextEditingController cidadeController = TextEditingController();
   final TextEditingController complementoController = TextEditingController();
   final TextEditingController referenciaController = TextEditingController();
   final TextEditingController bairroController = TextEditingController();
@@ -59,6 +57,9 @@ class CepProvider with ChangeNotifier {
   bool _isLoadingCeps = false;
   get isLoadingCeps => _isLoadingCeps;
 
+  bool _isUpdatingCep = false;
+  get isUpdatingCep => _isUpdatingCep;
+
   bool _isAddingCep = false;
   get isAddingCep => _isAddingCep;
 
@@ -70,6 +71,9 @@ class CepProvider with ChangeNotifier {
 
   String _errorMessageAddAddres = "";
   String get errorMessageAddAddres => _errorMessageAddAddres;
+
+  String _errorMessageUpdateCep = "";
+  String get errorMessageUpdateCep => _errorMessageUpdateCep;
 
   String _errorMessageGetAdressByCep = "";
   String get errorMessageGetAdressByCep => _errorMessageGetAdressByCep;
@@ -111,12 +115,12 @@ class CepProvider with ChangeNotifier {
     }
 
     CepModel cepModel = CepModel(
-      estado: selectedStateDropDown.value!,
+      estado: selectedStateDropDown.value,
       cep: int.parse(cepController.text),
       logradouro: logradouroController.text,
       complemento: complementoController.text,
       bairro: bairroController.text,
-      localidade: localidadeController.text,
+      cidade: cidadeController.text,
       numero: int.parse(numeroController.text),
       referencia: referenciaController.text,
     );
@@ -148,11 +152,15 @@ class CepProvider with ChangeNotifier {
     cepController.text = cepModel.cep.toString();
     logradouroController.text = cepModel.logradouro.toString();
     complementoController.text = cepModel.complemento.toString();
-    localidadeController.text = cepModel.bairro.toString();
-    numeroController.text = cepModel.numero.toString();
+    cidadeController.text = cepModel.bairro.toString();
     referenciaController.text = cepModel.referencia.toString();
-    _selectedStateDropDown.value = cepModel.estado.toString();
+    selectedStateDropDown.value = cepModel.estado.toString();
     bairroController.text = cepModel.bairro.toString();
+    numeroController.text = cepModel.numero.toString();
+
+    if (cepController.text.length == 7) {
+      cepController.text = "0${cepController.text}";
+    }
 
     _triedGetCep = true;
   }
@@ -172,10 +180,10 @@ class CepProvider with ChangeNotifier {
     logradouroController.text = "";
     bairroController.text = "";
     complementoController.text = "";
-    localidadeController.text = "";
+    cidadeController.text = "";
     numeroController.text = "";
     referenciaController.text = "";
-    _selectedStateDropDown.value = null;
+    selectedStateDropDown.value = null;
     _triedGetCep = false; //para deixar somente o campo de CEP aberto
   }
 
@@ -203,20 +211,20 @@ class CepProvider with ChangeNotifier {
           data: responseInMap,
           referenciaController: referenciaController,
           logradouroController: logradouroController,
-          localidadeController: localidadeController,
+          cidadeController: cidadeController,
           complementoController: complementoController,
           bairroController: bairroController,
           selectedStateDropDown: selectedStateDropDown,
           states: _states,
         );
-        print(responseInMap);
+        debugPrint(responseInMap.toString());
       } else {
-        print(response.reasonPhrase);
+        debugPrint(response.reasonPhrase);
       }
 
       notifyListeners();
     } catch (e) {
-      print("Erro para consultar o CEP: $e");
+      debugPrint("Erro para consultar o CEP: $e");
       _errorMessageGetAdressByCep =
           "Ocorreu um erro para consultar o CEP. Insira os dados do endereço manualmente";
     }
@@ -224,5 +232,41 @@ class CepProvider with ChangeNotifier {
     _triedGetCep = true;
     _isLoadingCeps = false;
     notifyListeners();
+  }
+
+  Future<bool> updateCep({
+    required String objectId,
+  }) async {
+    _errorMessageUpdateCep = "";
+    _isUpdatingCep = true;
+    notifyListeners();
+
+    CepModel cepModel = CepModel(
+      estado: selectedStateDropDown.value,
+      cep: int.parse(cepController.text),
+      logradouro: logradouroController.text,
+      complemento: complementoController.text,
+      bairro: bairroController.text,
+      cidade: cidadeController.text,
+      numero: int.parse(numeroController.text),
+      referencia: referenciaController.text,
+      objectId: objectId,
+    );
+    bool updated = await Back4appDatabaseAPI.updateCep(cepModel: cepModel);
+
+    if (!updated) {
+      _errorMessageUpdateCep = "Erro para atualizar o CEP!";
+    } else {
+      int index = _cepsList
+          .indexWhere((element) => element.objectId == cepModel.objectId);
+
+      if (index != -1) {
+        _cepsList[index] = cepModel;
+      }
+    }
+
+    _isUpdatingCep = false;
+    notifyListeners();
+    return updated;
   }
 }

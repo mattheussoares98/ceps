@@ -5,7 +5,7 @@ class CepModel {
   String? logradouro;
   String? complemento;
   String? bairro;
-  String? localidade;
+  String? cidade;
   int? numero;
   String? objectId;
   String? referencia;
@@ -16,7 +16,7 @@ class CepModel {
     required this.logradouro,
     required this.complemento,
     required this.bairro,
-    required this.localidade,
+    required this.cidade,
     required this.estado,
     required this.numero,
     this.referencia,
@@ -26,7 +26,7 @@ class CepModel {
   static updateControllers({
     required Map data,
     required TextEditingController logradouroController,
-    required TextEditingController localidadeController,
+    required TextEditingController cidadeController,
     required TextEditingController complementoController,
     required TextEditingController bairroController,
     required TextEditingController referenciaController,
@@ -36,8 +36,8 @@ class CepModel {
     logradouroController.text = data["logradouro"];
     complementoController.text = data["complemento"];
     referenciaController.text = data["referencia"] ?? "";
-    localidadeController.text = data["localidade"];
-    bairroController.text = data["localidade"];
+    cidadeController.text = data["localidade"];
+    bairroController.text = data["bairro"];
     selectedStateDropDown.value = states[data["uf"]];
   }
 
@@ -50,7 +50,7 @@ class CepModel {
       complemento: json['complemento'],
       referencia: json['referencia'] ?? "",
       bairro: json['bairro'],
-      localidade: json['localidade'],
+      cidade: json['localidade'],
       objectId: json['objectId'],
     );
   }
@@ -62,9 +62,9 @@ class CepModel {
     data['complemento'] = complemento;
     data['referencia'] = referencia ?? "";
     data['bairro'] = bairro;
-    data['localidade'] = localidade;
+    data['localidade'] = cidade;
     data["numero"] = numero;
-    data["objectId"] = objectId ?? "";
+    data["estado"] = estado;
 
     return data;
   }
