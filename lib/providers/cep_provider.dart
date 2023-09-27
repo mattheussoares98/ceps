@@ -97,10 +97,12 @@ class CepProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addCep() async {
+  Future<bool> addCep() async {
     _errorMessageAddAddres = "";
     _isAddingCep = true;
     notifyListeners();
+
+    bool cepIsAdded = false;
 
     bool cepAlreadyRegistered = await Back4appDatabaseAPI.cepAlreadyRegistered(
         cep: int.parse(cepController.text));
@@ -111,7 +113,7 @@ class CepProvider with ChangeNotifier {
 
       _isAddingCep = false;
       notifyListeners();
-      return;
+      return cepIsAdded;
     }
 
     CepModel cepModel = CepModel(
@@ -132,6 +134,7 @@ class CepProvider with ChangeNotifier {
     if (idInBack4app != "") {
       cepModel.objectId = idInBack4app;
       _cepsList.add(cepModel);
+      cepIsAdded = true;
       clearCepControllers();
     }
 
@@ -139,6 +142,7 @@ class CepProvider with ChangeNotifier {
     _isAddingCep = false;
 
     notifyListeners();
+    return cepIsAdded;
   }
 
   void updateCeps({required List<CepModel> cepList}) {
@@ -165,15 +169,21 @@ class CepProvider with ChangeNotifier {
     _triedGetCep = true;
   }
 
-  Future<void> getAllRegisteredCeps() async {
+  Future<void> getAllRegisteredCeps({bool? isRefreshingData = false}) async {
     _isLoadingCeps = true;
+    if (isRefreshingData!) {
+      notifyListeners();
+    }
     _cepsList.clear();
     _cepsList = await Back4appDatabaseAPI.getCeps();
     _isLoadingCeps = false;
     notifyListeners();
   }
 
-  void clearCepControllers({bool? clearCep = true}) {
+  void clearCepControllers({
+    bool? clearCep = true,
+    bool? alreadyInAddOrUpdatePage = false,
+  }) {
     if (clearCep == true) {
       cepController.text = "";
     }
@@ -183,8 +193,14 @@ class CepProvider with ChangeNotifier {
     cidadeController.text = "";
     numeroController.text = "";
     referenciaController.text = "";
-    selectedStateDropDown.value = null;
-    _triedGetCep = false; //para deixar somente o campo de CEP aberto
+    _selectedStateDropDown.value = null;
+
+    if (alreadyInAddOrUpdatePage!) {
+      //se não estiver na página de cadastro/atualização do endereço, não pode chamar o notifyListeners senão da erro por notificar enquanto está atualizando a árvore de widgets
+      notifyListeners();
+    } else {
+      _triedGetCep = false; //para deixar somente o campo de CEP aberto
+    }
   }
 
   Future<void> getAddressByCep({
@@ -263,6 +279,8 @@ class CepProvider with ChangeNotifier {
       if (index != -1) {
         _cepsList[index] = cepModel;
       }
+
+      clearCepControllers();
     }
 
     _isUpdatingCep = false;

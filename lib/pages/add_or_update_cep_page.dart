@@ -122,8 +122,8 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
   }
 
   _addAdress({required CepProvider cepProvider}) async {
-    await cepProvider.addCep();
-    if (cepProvider.errorMessageAddAddres != "") {
+    bool cepIsAdded = await cepProvider.addCep();
+    if (cepProvider.errorMessageAddAddres != "" && !cepIsAdded) {
       showSnackBar(
         cepProvider: cepProvider,
         errorMessage: cepProvider.errorMessageAddAddres,
@@ -134,6 +134,7 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
         errorMessage: "O CEP foi adicionado com sucesso",
         backgroundColor: Colors.green,
       );
+      _closePage();
     }
     unfocus();
   }
@@ -148,14 +149,12 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
     bool updatedCep = await cepProvider.updateCep(
       objectId: cepModelFromArgumentsForUpdateData!.objectId!,
     );
-    if (cepProvider.errorMessageUpdateCep != "") {
+    if (cepProvider.errorMessageUpdateCep != "" && !updatedCep) {
       showSnackBar(
         cepProvider: cepProvider,
         errorMessage: cepProvider.errorMessageUpdateCep,
       );
-    }
-
-    if (updatedCep) {
+    } else {
       _closePage();
       showSnackBar(
         cepProvider: cepProvider,
@@ -163,6 +162,7 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
         backgroundColor: Colors.green,
       );
     }
+
     unfocus();
   }
 
@@ -198,8 +198,8 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
         appBar: AppBar(
           title: Text(
             cepModelFromArgumentsForUpdateData == null
-                ? "Adicionar CEP"
-                : "Alterar CEP",
+                ? "Adicionar endereço"
+                : "Alterar endereço",
           ),
           leading: IconButton(
             onPressed: () {
@@ -506,7 +506,10 @@ class _AddOrUpdateCepPageState extends State<AddOrUpdateCepPage> {
                                       subtitle:
                                           "Deseja apagar todos os dados preenchidos?",
                                       function: () {
-                                        cepProvider.clearCepControllers();
+                                        cepProvider.clearCepControllers(
+                                          clearCep: false,
+                                          alreadyInAddOrUpdatePage: true,
+                                        );
                                       },
                                     );
                                   },

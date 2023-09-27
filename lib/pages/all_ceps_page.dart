@@ -80,147 +80,163 @@ class _AllCepsPageState extends State<AllCepsPage> {
       appBar: AppBar(
         title: const Center(
           child: Text(
-            "CEPs cadastrados",
+            "Endereços cadastrados",
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cepProvider.cepsList.length,
-                  itemBuilder: (context, index) {
-                    CepModel cepModel = cepProvider.cepsList[index];
-                    return Padding(
-                      padding: EdgeInsets.only(top: index == 0 ? 0 : 8.0),
-                      child: Dismissible(
-                        direction: DismissDirection.endToStart,
-                        key: UniqueKey(),
-                        confirmDismiss: (direction) async {
-                          return ShowAlertDialog.showAlertDialog(
-                            context: context,
-                            title: "Excluir CEP?",
-                            function: () async {
-                              await cepProvider.deleteCep(
-                                  objectId: cepModel.objectId.toString());
+      body: RefreshIndicator(
+        semanticsLabel: "Obtendo endereços cadastrados",
+        onRefresh: () async {
+          await cepProvider.getAllRegisteredCeps(isRefreshingData: true);
+        },
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5.0),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: cepProvider.cepsList.length,
+                      itemBuilder: (context, index) {
+                        CepModel cepModel = cepProvider.cepsList[index];
+                        return Padding(
+                          padding: EdgeInsets.only(top: index == 0 ? 0 : 8.0),
+                          child: Dismissible(
+                            direction: DismissDirection.endToStart,
+                            key: UniqueKey(),
+                            confirmDismiss: (direction) async {
+                              return ShowAlertDialog.showAlertDialog(
+                                context: context,
+                                title: "Excluir CEP?",
+                                function: () async {
+                                  await cepProvider.deleteCep(
+                                      objectId: cepModel.objectId.toString());
+                                },
+                              );
                             },
-                          );
-                        },
-                        background: const Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Icon(
-                              Icons.delete,
-                              color: Colors.red,
-                            ),
-                          ],
-                        ),
-                        child: Card(
-                          elevation: 10,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            side: const BorderSide(
-                              color: Colors.black12,
-                            ),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            background: const Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                if (cepModel.cep != null)
-                                  titleAndSubtitle(
-                                    title: "CEP",
-                                    subtitle: cepModel.cep.toString(),
-                                    otherWidget: InkWell(
-                                      onTap: () {
-                                        Navigator.of(context).pushNamed(
-                                          "addOrUpdatePage",
-                                          arguments: {
-                                            "cepModel": cepModel,
-                                          },
-                                        );
-                                      },
-                                      child: const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(
-                                          Icons.edit,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                if (cepModel.numero != null)
-                                  titleAndSubtitle(
-                                    title: "Número",
-                                    subtitle: cepModel.numero.toString(),
-                                  ),
-                                if (cepModel.estado != null)
-                                  titleAndSubtitle(
-                                    title: "Estado",
-                                    subtitle: cepModel.estado.toString(),
-                                  ),
-                                if (cepModel.bairro != null)
-                                  titleAndSubtitle(
-                                    title: "Bairro",
-                                    subtitle: cepModel.bairro.toString(),
-                                  ),
-                                if (cepModel.cidade != null)
-                                  titleAndSubtitle(
-                                    title: "Cidade",
-                                    subtitle: cepModel.cidade.toString(),
-                                  ),
-                                if (cepModel.logradouro != null)
-                                  titleAndSubtitle(
-                                    title: "Logradouro",
-                                    subtitle: cepModel.logradouro.toString(),
-                                  ),
-                                if (cepModel.complemento != "")
-                                  titleAndSubtitle(
-                                    title: "Complemento",
-                                    subtitle: cepModel.complemento.toString(),
-                                  ),
-                                if (cepModel.referencia != "")
-                                  titleAndSubtitle(
-                                    title: "Referência",
-                                    subtitle: cepModel.referencia.toString(),
-                                    otherWidget: InkWell(
-                                      onTap: () async {
-                                        ShowAlertDialog.showAlertDialog(
-                                          context: context,
-                                          title: "Excluir CEP?",
-                                          function: () async {
-                                            await cepProvider.deleteCep(
-                                                objectId: cepModel.objectId
-                                                    .toString());
-                                          },
-                                        );
-                                      },
-                                      child: const Padding(
-                                        padding: EdgeInsets.only(right: 8.0),
-                                        child: Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
                               ],
                             ),
+                            child: Card(
+                              elevation: 10,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: const BorderSide(
+                                  color: Colors.black12,
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (cepModel.cep != null)
+                                      titleAndSubtitle(
+                                        title: "CEP",
+                                        subtitle: cepModel.cep.toString(),
+                                        otherWidget: InkWell(
+                                          onTap: () {
+                                            Navigator.of(context).pushNamed(
+                                              "addOrUpdatePage",
+                                              arguments: {
+                                                "cepModel": cepModel,
+                                              },
+                                            );
+                                          },
+                                          child: const Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 8.0),
+                                            child: Icon(
+                                              Icons.edit,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (cepModel.numero != null)
+                                      titleAndSubtitle(
+                                        title: "Número",
+                                        subtitle: cepModel.numero.toString(),
+                                      ),
+                                    if (cepModel.estado != null)
+                                      titleAndSubtitle(
+                                        title: "Estado",
+                                        subtitle: cepModel.estado.toString(),
+                                      ),
+                                    if (cepModel.bairro != null)
+                                      titleAndSubtitle(
+                                        title: "Bairro",
+                                        subtitle: cepModel.bairro.toString(),
+                                      ),
+                                    if (cepModel.cidade != null)
+                                      titleAndSubtitle(
+                                        title: "Cidade",
+                                        subtitle: cepModel.cidade.toString(),
+                                        otherWidget: InkWell(
+                                          onTap: () async {
+                                            ShowAlertDialog.showAlertDialog(
+                                              context: context,
+                                              title: "Excluir CEP?",
+                                              function: () async {
+                                                await cepProvider.deleteCep(
+                                                    objectId: cepModel.objectId
+                                                        .toString());
+                                              },
+                                            );
+                                          },
+                                          child: const Padding(
+                                            padding:
+                                                EdgeInsets.only(right: 8.0),
+                                            child: Icon(
+                                              Icons.delete,
+                                              color: Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    if (cepModel.logradouro != null)
+                                      titleAndSubtitle(
+                                        title: "Logradouro",
+                                        subtitle:
+                                            cepModel.logradouro.toString(),
+                                      ),
+                                    if (cepModel.complemento != "")
+                                      titleAndSubtitle(
+                                        title: "Complemento",
+                                        subtitle:
+                                            cepModel.complemento.toString(),
+                                      ),
+                                    if (cepModel.referencia != "")
+                                      titleAndSubtitle(
+                                        title: "Referência",
+                                        subtitle:
+                                            cepModel.referencia.toString(),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          if (cepProvider.isDeletingCep)
-            const LoadingComponent(message: "Excluindo CEP"),
-        ],
+            ),
+            if (cepProvider.isDeletingCep)
+              const LoadingComponent(message: "Excluindo CEP"),
+            if (cepProvider.isLoadingCeps)
+              const LoadingComponent(message: "Pesquisando CEPs cadastrados"),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Padding(
